@@ -4,11 +4,15 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -42,7 +46,10 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView sportText;
 
     private ImageView bingPicImg;
-
+    public SwipeRefreshLayout swipeRefreshLayout;
+    private String mweatherId;
+    public DrawerLayout drawerLayout;
+    private Button button;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,6 +59,8 @@ public class WeatherActivity extends AppCompatActivity {
             decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN|View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
+
+
         setContentView(R.layout.activity_weather);
         //初始化各种控件
         weatherLayout=(ScrollView)findViewById(R.id.weather_layout);
@@ -66,7 +75,16 @@ public class WeatherActivity extends AppCompatActivity {
         carWashText=(TextView)findViewById(R.id.car_wash_text);
         sportText=(TextView)findViewById(R.id.sport_text);
         bingPicImg=(ImageView)findViewById(R.id.bing_pic_img);
-
+        swipeRefreshLayout=(SwipeRefreshLayout)findViewById(R.id.swipe_refresh);
+        swipeRefreshLayout.setColorSchemeResources(R.color.colorPrimary);
+        drawerLayout=(DrawerLayout)findViewById(R.id.drawer_layout);
+        button=(Button)findViewById(R.id.nav_button);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
          /*SharedPreferences prefs= PreferenceManager.getDefaultSharedPreferences(this);
        String weatherString=prefs.getString("weather",null);
         if(weatherString!=null){
@@ -76,10 +94,18 @@ public class WeatherActivity extends AppCompatActivity {
         }else{
          */
             //无缓存时去服务器查询天气
-            String weatherId=getIntent().getStringExtra("weather_id");
+
+
+            mweatherId=getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
-            requestWeather(weatherId);
+            requestWeather(mweatherId);
             //loadBingPic();
+            swipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener(){
+                @Override
+                public void onRefresh(){
+                    requestWeather(mweatherId);
+                }
+            });
 
         //}
     }
@@ -102,10 +128,11 @@ public class WeatherActivity extends AppCompatActivity {
                             editor.apply();
                             showWeatherInfo(weather);
                         }else{
-                            //Log.d("Ta",weather.status);
+                            Log.d("Ta",weather.status);
                             Toast.makeText(WeatherActivity.this,"获取天气信息失败",Toast.LENGTH_SHORT).show();
 
                         }
+                        swipeRefreshLayout.setRefreshing(false);
                     }
                 });
             }
@@ -115,9 +142,10 @@ public class WeatherActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable(){
                     @Override
                     public void run(){
-                        //Log.d("Te","adf");
+                        Log.d("Te","adf");
                         Toast.makeText(WeatherActivity.this,"获取天气信息失败",Toast.LENGTH_SHORT).show();
-                        //Log.d("Te","df");
+                        Log.d("Te","df");
+                        swipeRefreshLayout.setRefreshing(false);
                     }
                 });
             }
